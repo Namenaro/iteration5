@@ -1,39 +1,50 @@
-class MultiKernelDevice:
-    def __init__(self, max_distance, ker_size):
-        self.ker_size = ker_size
-        self.max_distance = max_distance
+import numpy as np
 
+class MultiKernelDevice:
+    def __init__(self, ker_size):
+        self.ker_size = ker_size
         self.kernels = []
 
-    def _try_recognize(self, input_patch):
-        # возвращаем бинарный результат распознавания: если входные
-        # данные оказались достаточно похожи хоть на одно ядро, то
-        # возвращаем истину. Иначе ложь.
+    def _find_best_match_for_patch(self, input_patch):
         if len(self.kernels) == 0:
             return False
-        for kernel in self.kernels:
+        best_match_score = None
+        best_kernel_id = None
+        for i in range(len(self.kernels)):
+            kernel = self.kernels[i]
             diff = self._compare_kenel_and_patch(kernel, input_patch)
-            if diff < self.max_distance:
-               return True
-        return False
+            if best_match_score is None:
+                best_match_score = diff
+                best_kernel_id = i
+            else:
+                if diff < best_match_score:
+                    best_match_score = diff
+                    best_kernel_id = i
+        return best_match_score, best_kernel_id
+
 
     def _compare_kenel_and_patch(self, kernel, patch):
-        # здесь реализуем какой-то способ померить непохожесть данных (патч) и эталона (кернел)
-        # функция возвращает какой-то неотрицательное число "непохожесть". Чем оно больше,
-        # тем хуже. Ноль значит полное совпадение (идеальное).
-        pass
+        return np.linalg.norm(kernel-patch)
 
-    def try_recognize_region(self, region):
-        # прикладываем каждое из ядер к каждому из возможных патчей в регионе до
-        # тех пор, пока не случится хорошего попадания. Если хорошего попадания
-        # не случается, то возвращаем отрицательное число. Если попаданий несколько,
-        # то возвращаем управление, приводящее к наилучшему попаданию в образец.
+    def find_best_in_vicinity(self, coord, vicinity, signal):
+        best_u = None
+        best_kernel_id = None
+        best_score = None
+        for u in range(-vicinity, vicinity):
+            start = coord + u
+            if start < 0 or start > len(signal) - 1 - self.ker_size:
+                continue
+            patch = signal[start:start+self.ker_size]
+            u_best_match_score, u_best_kernel_id = self._find_best_match_for_patch(patch)
+            if best_u is None:
+                best_u = u
+                best_kernel_id = u_best_kernel_id
+                best_score = u_best_match_score
+            else:
+                if u_best_match_score < best_score:
+                    best_u = u
+                    best_kernel_id = u_best_kernel_id
+                    best_score = u_best_match_score
+        return best_u, best_kernel_id, best_score
 
-        for i in range(0, len(region) - self.ker_size):
-            region_patch = region[i:i+self.ker_size]
-            if self._try_recognize(region_patch):
-                return i
-        return -1
 
-    def add_new_kernel(self, region):
-        pass

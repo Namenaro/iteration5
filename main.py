@@ -20,16 +20,16 @@ def handle_ecg_to_3_device(ecg_json, device1, device2, device3):
 
 
 def handle_point_by_device(coord, signal, device):
-    pass
+
 
 
 if __name__ == "__main__":
     json_data = get_healthy_7()
-    max_distance = 20
+
     ker_size = 10
-    device1 = MultiKernelDevice(max_distance, ker_size)
-    device2 = MultiKernelDevice(max_distance, ker_size)
-    device3 = MultiKernelDevice(max_distance, ker_size)
+    device1 = MultiKernelDevice(ker_size)
+    device2 = MultiKernelDevice(ker_size)
+    device3 = MultiKernelDevice(ker_size)
     for patient_id in json_data.keys():
         patient = json_data[patient_id]
         handle_ecg_to_3_device(patient, device1, device2, device3)
